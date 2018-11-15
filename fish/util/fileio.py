@@ -215,3 +215,76 @@ def image_conversion(source_path, dest_fmt, wipe=False):
             remove(source_path)
         else:
             print('{0} and {1} differ... something went wrong!'.format(source_path, dest_path))
+
+            
+def resample_image(source_path, dest_fmt, indices=[], wipe=False):
+    """
+    Resample the image to desired dimensions, optionally erasing the source image
+
+    image_path : string
+        Path to image to be converted.
+
+    indices : list
+        List of lists specifying the start and stop in each dimension.
+        The dimensions of list have to correspond to the the
+        dimension of the image.
+
+        For example, for a tzyx image of size (18000, 26, 1024, 2048),
+        you could try something like this:
+
+        z_start = 0
+        z_stop = 13
+        y_start = 300
+        y_stop = 900
+        x_start = 0
+        x_stop = 600
+
+        indices = [[z_start,z_stop],
+                   [y_start,y_stop],
+                   [x_start,x_stop]]
+
+        This should give you an image of size (18000, 13, 600, 600).
+
+    wipe : bool
+        If True, delete the source image after successful conversion
+
+    """
+
+    from numpy import array_equal
+    from os import remove
+
+    
+    # unpack indices
+    z_start = indices[0][0]
+    z_stop = indices[0][1]
+    y_start = indices[1][0]
+    y_stop = indices[1][1]
+    x_start = indices[2][0]
+    x_stop = indices[2][1]
+
+    # the name of the file before format extension
+    source_name = source_path.split('.')[0]
+    dest_name = source_name.replace('/im/','/forebrain/')
+    
+    dest_path = dest_name + '.' + dest_fmt
+    source_image = read_image(source_path)
+
+    resampled_image = source_image[z_start:z_stop, \
+                                   y_start:y_stop, \
+                                   x_start:x_stop]
+    write_image(dest_path, resampled_image)
+    print(dest_path + ' written')
+
+    if wipe:
+        check_image = read_image(dest_path)
+        if array_equal(check_image, source_image):
+            remove(source_path)
+        else:
+            print('{0} and {1} differ... something went wrong!'.format(source_path, dest_path))
+
+
+
+
+
+
+

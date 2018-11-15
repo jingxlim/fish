@@ -97,7 +97,7 @@ def estimate_onset(signal, threshold, duration):
     return inits[valid]
 
 
-def estimate_swims(signal, fs=6000):
+def estimate_swims(signal, fs=6000, scaling=1.6):
     """ Estimate swim timing from ephys recording of motor neurons
 
     Parameters
@@ -119,7 +119,7 @@ def estimate_swims(signal, fs=6000):
     inter_swim_min = .12 * fs
 
     # estimate swim threshold
-    thr = estimate_threshold(signal, fs * 60)
+    thr = estimate_threshold(signal, fs * 60, scaling=scaling)
 
     peaksT, peaksIndT = estimate_peaks(signal, dead_time)
 

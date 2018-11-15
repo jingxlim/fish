@@ -242,7 +242,9 @@ def nparray_to_video(fname, data, clim='auto', cmap='gray', codec='h264', fps=24
 
 
 class RoiDrawing(object):
-    """Class for drawing ROI on matplotlib figures"""
+    """
+    Class for drawing ROI on matplotlib figures
+    """
 
     def __init__(self, ax, image_data):
         self.image_axes = ax
@@ -280,6 +282,9 @@ class RoiDrawing(object):
         self.masks.append(None)
 
     def onpress(self, event):
+        """
+        Callback function for connection to the event manager.
+        """
         from matplotlib.widgets import Lasso
 
         if event.inaxes != self.image_axes:
