@@ -178,7 +178,7 @@ def depth_project(data, axis=0, cmap='jet', clim='auto'):
     sm = ScalarMappable(Normalize(0, 1, clip=True), cmap)
 
     cm = sm.to_rgba(linspace(0, 1, data.shape[axis]))
-    cvol = zeros((*data.shape, 4))
+    cvol = zeros((data.shape, 4))
     data_r = rescale(data.astype('float32'), in_range=clim, out_range=(0, 1))
     data_r = array([data_r] * cm.shape[-1]).transpose(1, 2, 3, 0)
     for ind in range(cvol.shape[axis]):

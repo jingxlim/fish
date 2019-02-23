@@ -60,14 +60,14 @@ def _klb_writer(klb_path, image):
     writefull(image, str(klb_path))
 
     
-def _h5_reader(h5_path, roi=None):
+def _h5_reader(h5_path, dset_name='default', roi=None):
     from h5py import File
 
     if roi is None:
         roi = slice(None)
 
     with File(h5_path, 'r', libver='latest') as f:
-        return f['default'][roi]
+        return f[dset_name][roi]
 
     
 def _h5_writer(h5_path, data):
@@ -88,6 +88,7 @@ readers['stack'] = _stack_reader
 readers['tif'] = _tif_reader
 readers['klb'] = _klb_reader
 readers['h5'] = _h5_reader
+readers['hdf5'] = _h5_reader
 
 writers = dict()
 writers['stack'] = _stack_writer
@@ -96,7 +97,7 @@ writers['klb'] = _klb_writer
 writers['h5'] = _h5_writer
 
 
-def read_image(fname, roi=None, parallelism=1):
+def read_image(fname, roi=None, dset_name='default', parallelism=1):
     """
     Load .stack, .tif, .klb, or .h5 data and return as a numpy array
 
@@ -115,12 +116,20 @@ def read_image(fname, roi=None, parallelism=1):
 
     if isinstance(fname, str):
         fmt = fname.split('.')[-1]
-        reader = partial(readers[fmt], roi=roi)
+        
+        if fmt == '.h5' or fmt == '.hdf5':
+            reader = partial(readers[fmt], roi=roi, dset_name=dset_name)
+        else:
+            reader = partial(readers[fmt], roi=roi)
+            
         result = reader(fname)
 
     elif isinstance(fname, (tuple, list, ndarray)):
         fmt = fname[0].split('.')[-1]
-        reader = partial(readers[fmt], roi=roi)
+        if fmt == '.h5' or fmt == '.hdf5':
+            reader = partial(readers[fmt], roi=roi, dset_name=dset_name)
+        else:
+            reader = partial(readers[fmt], roi=roi)
 
         if parallelism == 1:
             result = array([reader(f) for f in fname])
@@ -153,7 +162,7 @@ def write_image(fname, data):
     return writers[fmt](fname, data)
 
 
-def to_dask(fnames):
+def to_dask(fnames,dset_name='default'):
     """
     Return a dask array constructued from an collection of ndarrays distributed across multiple files.
 
@@ -165,12 +174,12 @@ def to_dask(fnames):
     from numpy import memmap
 
     fmt = fnames[0].split('.')[-1]
-    s = read_image(fnames[0])
+    s = read_image(fnames[0],dset_name=dset_name)
 
     def delf(fn):
-        return File(fn, mode='r', libver='latest')['default'][:]
+        return File(fn, mode='r', libver='latest')[dset_name][:]
 
-    if fmt == 'h5':
+    if fmt == 'h5' or fmt == 'hdf5':
         result = stack([from_delayed(delayed(delf)(fn), s.shape, s.dtype) for fn in fnames])
         return result
 
