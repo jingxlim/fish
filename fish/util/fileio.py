@@ -34,7 +34,7 @@ def _stack_reader(stack_path, roi=None):
     dims = get_metadata(param_file)['dimensions'][::-1]
 
     if roi is not None:
-        im = memmap(stack_path, dtype='uint16', shape=dims)[roi] 
+        im = memmap(stack_path, dtype='uint16', shape=dims, mode='r')[roi]
     else:
         im = fromfile(stack_path, dtype='uint16').reshape(dims)
         
@@ -82,24 +82,35 @@ def _h5_writer(h5_path, data):
         f.create_dataset('default', data=data, compression='gzip', chunks=True, shuffle=True)
         f.close()
 
-    
+
+def _jp2_reader(jp2_path, roi=None):
+    from glymur import Jp2k
+    return Jp2k(jp2_path).read()[roi]
+
+
+def _jp2_writer(jp2_path, image):
+    raise NotImplementedError
+
+
 readers = dict()
 readers['stack'] = _stack_reader
 readers['tif'] = _tif_reader
 readers['klb'] = _klb_reader
 readers['h5'] = _h5_reader
 readers['hdf5'] = _h5_reader
+readers['jp2'] = _jp2_reader
 
 writers = dict()
 writers['stack'] = _stack_writer
 writers['tif'] = _tif_writer
 writers['klb'] = _klb_writer
 writers['h5'] = _h5_writer
+writers['jp2'] = _jp2_writer
 
 
 def read_image(fname, roi=None, dset_name='default', parallelism=1):
     """
-    Load .stack, .tif, .klb, or .h5 data and return as a numpy array
+    Load .stack, .tif, .klb, .h5, or jp2 data and return as a numpy array
 
     fname : string, path to image file
 
@@ -108,7 +119,6 @@ def read_image(fname, roi=None, dset_name='default', parallelism=1):
     parallelism : int, defines the number of cores to use for loading multiple images. Set to -1 to use all cores.
 
     """
-    # Get the file extension for this file, assuming it is the last continuous string after the last period
 
     from functools import partial
     from numpy import array, ndarray
@@ -185,17 +195,17 @@ def to_dask(fnames,dset_name='default'):
 
     elif fmt == 'stack':
         from os.path import split, sep
-        mems = [memmap(fn, dtype=s.dtype, shape=s.shape) for fn in fnames]
+        mems = [memmap(fn, dtype=s.dtype, shape=s.shape, mode='r') for fn in fnames]
         result = stack([from_array(mem, chunks=s.shape) for mem in mems])
         return result
 
-    elif fmt == 'tif':
+    elif fmt in ('tif', 'jp2'):
         rdr = delayed(read_image)
         result = stack([from_delayed(rdr(fn), shape=s.shape, dtype=s.dtype) for fn in fnames])
         return result
 
     else:
-        raise NotImplementedError('Only .h5 files supported at this time, not {0}'.format(fmt))
+        raise NotImplementedError('{0} files not supported at this time'.format(fmt))
 
 
 def image_conversion(source_path, dest_fmt, wipe=False):
