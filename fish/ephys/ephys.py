@@ -164,6 +164,10 @@ def windowed_variance(signal, kern_mean=None, kern_var=None, fs=6000):
     """
     from scipy.signal import gaussian, fftconvolve
 
+    # # workaround for Intel MKL DFTI ERROR
+    # import numpy as np
+    # np.fft.restore_all()
+
     # set the width of the kernels to use for smoothing
     kw = int(.04 * fs)
 
@@ -268,3 +272,16 @@ def estimate_threshold(signal, window=180000, scaling=1.6, lower_percentile=.01)
         th[t:] = (med + scaling * (med - bottom))
 
     return th
+
+if __name__ == "__main__":
+    
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from scipy.fftpack import fft
+
+    filename = r'E:\habiba\ephys\6dpf_3118x3040_fish01_exp1_random_loom .10chFlt'
+    data = load(filename)
+    
+    plot, ax = plt.subplots(10,1,figsize=(9.5,10))
+    for i in range(10):
+        ax[i].plot(data[i])

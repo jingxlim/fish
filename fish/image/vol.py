@@ -67,7 +67,9 @@ def baseline(data, window, percentile, downsample=1, axis=-1):
 
     else:
         data_ds = data[slices]
+        print('data_ds: ', data_ds.shape)
         baseline_ds = percentile_filter(data_ds, percentile=percentile, size=size)
+        print('baseline_ds: ', baseline_ds.shape)
         interper = interp1d(range(0, data.shape[axis], downsample), baseline_ds, axis=axis, fill_value='extrapolate')
         bl = interper(range(data.shape[axis]))
 
