@@ -14,7 +14,15 @@
 from ..util.roi import ROI
 
 
-def proj_plot(volume, proj_fun, clims='auto', figsize=4, aspect=(1, 1, 1), cmap='gray', interpolation='Lanczos'):
+def proj_plot(
+    volume,
+    proj_fun,
+    clims="auto",
+    figsize=4,
+    aspect=(1, 1, 1),
+    cmap="gray",
+    interpolation="Lanczos",
+):
     """
     Project and plot a volume along 3 axes using a user-supplied function, using separate subplots for each projection
 
@@ -41,16 +49,20 @@ def proj_plot(volume, proj_fun, clims='auto', figsize=4, aspect=(1, 1, 1), cmap=
     from numpy import percentile, hstack, swapaxes
     from matplotlib.pyplot import subplots
 
-    ori = 'lower'
+    ori = "lower"
 
     projs = [proj_fun(volume, axis=axis) for axis in range(3)]
 
     # calculate clims for grayscale if necessary
-    if clims == 'auto':
+    if clims == "auto":
         clims = percentile(hstack([p.ravel() for p in projs]), (0, 100))
         clims = (clims, clims, clims)
 
-    z, y, x = volume.shape[0] * aspect[0], volume.shape[1] * aspect[1], volume.shape[2] * aspect[2]
+    z, y, x = (
+        volume.shape[0] * aspect[0],
+        volume.shape[1] * aspect[1],
+        volume.shape[2] * aspect[2],
+    )
 
     w = x + z
     h = y + z
@@ -62,22 +74,43 @@ def proj_plot(volume, proj_fun, clims='auto', figsize=4, aspect=(1, 1, 1), cmap=
     p_zx = projs[1]
     p_zy = swapaxes(projs[2], 0, 1)
 
-    fig, axs = subplots(nrows=2, ncols=2, figsize=(figsize, figsize * h/w))
+    fig, axs = subplots(nrows=2, ncols=2, figsize=(figsize, figsize * h / w))
 
-    axs[0][0].imshow(p_xy, origin=ori, aspect='auto', cmap=cmap, clim=clims[0], interpolation=interpolation)
-    axs[1][0].imshow(p_zx, origin=ori, aspect='auto', cmap=cmap, clim=clims[1], interpolation=interpolation)
-    axs[0][1].imshow(p_zy, origin=ori, aspect='auto', cmap=cmap, clim=clims[2], interpolation=interpolation)
+    axs[0][0].imshow(
+        p_xy,
+        origin=ori,
+        aspect="auto",
+        cmap=cmap,
+        clim=clims[0],
+        interpolation=interpolation,
+    )
+    axs[1][0].imshow(
+        p_zx,
+        origin=ori,
+        aspect="auto",
+        cmap=cmap,
+        clim=clims[1],
+        interpolation=interpolation,
+    )
+    axs[0][1].imshow(
+        p_zy,
+        origin=ori,
+        aspect="auto",
+        cmap=cmap,
+        clim=clims[2],
+        interpolation=interpolation,
+    )
 
-    axs[0][0].set_position([0, 1-hr, wr, hr])
-    axs[0][1].set_position([wr, 1-hr, 1-wr, hr])
-    axs[1][0].set_position([0, 0, wr, 1-hr])
-    axs[1][1].set_position([wr, 0, 1-wr, 1-hr])
-    [ax.axis('off') for ax in axs.ravel()]
+    axs[0][0].set_position([0, 1 - hr, wr, hr])
+    axs[0][1].set_position([wr, 1 - hr, 1 - wr, hr])
+    axs[1][0].set_position([0, 0, wr, 1 - hr])
+    axs[1][1].set_position([wr, 0, 1 - wr, 1 - hr])
+    [ax.axis("off") for ax in axs.ravel()]
 
     return axs
 
 
-def proj_fuse(data, fun, aspect=(1, 1, 1), fill_value=0, arrangement=[0,1,2]):
+def proj_fuse(data, fun, aspect=(1, 1, 1), fill_value=0, arrangement=[0, 1, 2]):
     """
     Project a volume along 3 axes using a user-supplied function, returning a 2D composite of projections. If the input
     array has the shape [z,y,x], the output shape will be: [z * aspect_z + y * aspect + y, z * aspect_z + x * aspect_x]
@@ -101,30 +134,36 @@ def proj_fuse(data, fun, aspect=(1, 1, 1), fill_value=0, arrangement=[0,1,2]):
     old_dims = array(data.shape)
     new_dims = array(aspect) * old_dims
 
-    stretched = zeros([new_dims[1] + new_dims[0], new_dims[2] + new_dims[0]]) + fill_value
+    stretched = (
+        zeros([new_dims[1] + new_dims[0], new_dims[2] + new_dims[0]]) + fill_value
+    )
     projs = []
 
     for axis, dim in enumerate(new_dims):
         indexer = list(range(len(new_dims)))
         indexer.pop(axis)
-        projs.append(resize(fun(data, axis), new_dims[indexer], mode='constant', preserve_range=True))
+        projs.append(
+            resize(
+                fun(data, axis), new_dims[indexer], mode="constant", preserve_range=True
+            )
+        )
     if arrangement == [0, 1, 2]:
-        stretched[:new_dims[1], new_dims[2]:] = projs[2].T
-        stretched[new_dims[1]:, :new_dims[2]] = projs[1]
-        stretched[:new_dims[1], :new_dims[2]] = projs[0]
+        stretched[: new_dims[1], new_dims[2] :] = projs[2].T
+        stretched[new_dims[1] :, : new_dims[2]] = projs[1]
+        stretched[: new_dims[1], : new_dims[2]] = projs[0]
     elif arrangement == [2, 0, 1]:
-        stretched[:new_dims[1], :new_dims[0]] = projs[2].T[:, ::-1]
-        stretched[new_dims[1]:, new_dims[0]:] = projs[1]
-        stretched[:new_dims[1], new_dims[0]:] = projs[0]
+        stretched[: new_dims[1], : new_dims[0]] = projs[2].T[:, ::-1]
+        stretched[new_dims[1] :, new_dims[0] :] = projs[1]
+        stretched[: new_dims[1], new_dims[0] :] = projs[0]
     else:
-        raise ValueError('Arrangement must be [0, 1, 2] or [2, 0, 1]')
+        raise ValueError("Arrangement must be [0, 1, 2] or [2, 0, 1]")
 
     return stretched
 
 
-def apply_cmap(data, cmap='gray', clim='auto'):
+def apply_cmap(data, cmap="gray", clim="auto", bytes=False):
     """
-    Apply a matplotlib colormap to a 2D or 3D numpy array and return the rgba data in uint8 format
+    Apply a matplotlib colormap to a 2D or 3D numpy array and return the rgba data in float or uint8 format.
 
     data : 2D or 3D numpy array
 
@@ -135,27 +174,38 @@ def apply_cmap(data, cmap='gray', clim='auto'):
         Upper and lower intensity limits to display from data. Defaults to 'auto'
         If clim='auto', the min and max of data will be used as the clim.
         Before applying the colormap, data will be clipped from clim[0] to clim[1].
+
+    bytes : bool, defaults to False
+        If true, return values are uint8 in the range 0-255. If false, return values are float in the range 0-1
     """
 
     from matplotlib.colors import Normalize
     from matplotlib.cm import ScalarMappable
     from numpy import array
 
-    if clim == 'auto':
+    if clim == "auto":
         clim = data.min(), data.max()
 
     sm = ScalarMappable(Normalize(*clim, clip=True), cmap)
-    rgba = array([sm.to_rgba(d, bytes=True) for d in data])
+    rgba = array([sm.to_rgba(d, bytes=bytes) for d in data])
 
     return rgba
 
 
-def depth_project(data, axis=0, cmap='jet', clim='auto'):
+def depth_project(data, axis=0, cmap="jet", clim="auto", mode="sum"):
     """
-    Generate an RGB "depth projection" of a 3D numpy array. After the input data are normalized to [0,1], planes along
-    the projection axis are mapped to positions in a linear RGB colormap. Thus for each plane there is an RGB color,
-    and each point in the plane is multiplied with that RGB color. The output is the sum of the values along the
-    projection axis, i.e. a 3D array with the last dimension containing RGB values.
+    Generate an RGB "depth projection" of a 3D numpy array.
+
+    Input data are normalized to [0,1] and data values along the projection axis are mapped
+    to indices in a linear RGBA colormap.
+
+    If `mode` is `sum`, for each element along the projection axis there is a color, and the brightness of this color is
+    scaled by the intensity values of the data. The output is the sum of the values along the projection axis,
+    i.e. a 3D array with the last dimension containing RGB values.
+
+    If 'mode' is 'max', then the intensity values are determined by the maximum intensity projection of data over the
+    projection axis, and the color of each pixel in the maximum projection is specified by the index where the maximum
+    value was attained. In the case of repeated maxmimal values, the index of the first is used.
 
     data : 3D numpy array
 
@@ -167,33 +217,58 @@ def depth_project(data, axis=0, cmap='jet', clim='auto'):
         This argument determines the minimum and maximum intensity values to use before rescaling the data to the range
         [0,1]. The default value, 'auto', specifies that the minimum and maximum values of the input data will be mapped
         to [0,1].
+
+    mode : string determining which projection mode to use
+
+
     """
-    from matplotlib.colors import Normalize
-    from matplotlib.cm import ScalarMappable
-    from numpy import linspace, zeros, array
+    from numpy import linspace, zeros, array, argmax, all
     from skimage.exposure import rescale_intensity as rescale
+    from matplotlib.cm import get_cmap
 
-    if clim == 'auto':
+    if clim == "auto":
         clim = data.min(), data.max()
-    sm = ScalarMappable(Normalize(0, 1, clip=True), cmap)
 
-    cm = sm.to_rgba(linspace(0, 1, data.shape[axis]))
-    cvol = zeros((data.shape, 4))
-    data_r = rescale(data.astype('float32'), in_range=clim, out_range=(0, 1))
-    data_r = array([data_r] * cm.shape[-1]).transpose(1, 2, 3, 0)
-    for ind in range(cvol.shape[axis]):
-        slices = [slice(None)] * cvol.ndim
-        slices[axis] = ind
-        slices = tuple(slices)
-        cvol[slices] = cm[ind] * data_r[slices]
-    cvol[:, :, :, -1] = 1
-    proj = cvol.sum(axis)
+    cm = get_cmap(cmap)(linspace(0, 1, data.shape[axis]))
+    data_r = rescale(data.astype("float32"), in_range=clim, out_range=(0, 1))
+
+    if mode == "sum":
+
+        cvol = zeros((*data.shape, 4))
+
+        data_r = array([data_r] * cm.shape[-1]).transpose(1, 2, 3, 0)
+        for ind in range(cvol.shape[axis]):
+            slices = [slice(None)] * cvol.ndim
+            slices[axis] = ind
+            slices = tuple(slices)
+            cvol[slices] = cm[ind] * data_r[slices]
+
+        proj = cvol.sum(axis)
+        proj[:, :, -1] = 1
+        proj[:, :, :-1] = rescale(
+            proj[:, :, :-1], in_range=(0, proj.max()), out_range=(0, 1)
+        )
+
+    elif mode == "max":
+        mx = data_r.max(axis)
+        dp = argmax(data_r, axis)
+        proj = (cm[dp, :].T * mx.T).T
+
+    else:
+        raise ValueError('Mode must be "sum" or "max"')
 
     return proj
 
 
-def nparray_to_video(fname, data, clim='auto', cmap='gray', codec='h264', fps=24,
-                     ffmpeg_params=['-pix_fmt', 'yuv420p']):
+def nparray_to_video(
+    fname,
+    data,
+    clim="auto",
+    cmap="gray",
+    codec="h264",
+    fps=24,
+    ffmpeg_params=["-pix_fmt", "yuv420p"],
+):
     """
     Save 3D (t, y, x) numpy array to disk as movie. Uses matplotlib colormaps for rescaling / coloring data,
     and uses moviepy.editor.ImageSequenceClip for movie creation.
@@ -231,14 +306,21 @@ def nparray_to_video(fname, data, clim='auto', cmap='gray', codec='h264', fps=24
 
     # ffmpeg errors if the dimensions of each frame are not divisible by 2
     if data.shape[1] % 2 == 1:
-        data = pad(data, ((0, 0), (0, 1), (0, 0)), mode='minimum')
+        data = pad(data, ((0, 0), (0, 1), (0, 0)), mode="minimum")
 
     if data.shape[2] % 2 == 1:
-        data = pad(data, ((0, 0), (0, 0), (0, 1)), mode='minimum')
+        data = pad(data, ((0, 0), (0, 0), (0, 1)), mode="minimum")
 
     data_rgba = apply_cmap(data, cmap=cmap, clim=clim)
     clip = ImageSequenceClip([d for d in data_rgba], fps=fps)
-    clip.write_videofile(fname, audio=False, codec=codec, fps=fps, ffmpeg_params=ffmpeg_params, bitrate='50000k')
+    clip.write_videofile(
+        fname,
+        audio=False,
+        codec=codec,
+        fps=fps,
+        ffmpeg_params=ffmpeg_params,
+        bitrate="50000k",
+    )
 
 
 class RoiDrawing(object):
@@ -252,8 +334,12 @@ class RoiDrawing(object):
         self.image_data = image_data
         self.lines = []
         self.rois = []
-        self.cid_press = self.image_axes.figure.canvas.mpl_connect('button_press_event', self.onpress)
-        self.cid_release = self.image_axes.figure.canvas.mpl_connect('button_press_event', self.onpress)
+        self.cid_press = self.image_axes.figure.canvas.mpl_connect(
+            "button_press_event", self.onpress
+        )
+        self.cid_release = self.image_axes.figure.canvas.mpl_connect(
+            "button_press_event", self.onpress
+        )
         self.masks = []
         self.selector = []
 
@@ -292,14 +378,16 @@ class RoiDrawing(object):
         if self.image_axes.figure.canvas.widgetlock.locked():
             return
         self.focus_incr()
-        self.selector = Lasso(event.inaxes, (event.xdata, event.ydata), self.update_line_from_verts)
+        self.selector = Lasso(
+            event.inaxes, (event.xdata, event.ydata), self.update_line_from_verts
+        )
         self.image_axes.figure.canvas.widgetlock(self.selector)
 
     def update_line_from_verts(self, verts):
         current_line = self.lines[self.focus_index]
         current_roi = self.rois[self.focus_index]
 
-        for x,y in verts:
+        for x, y in verts:
             current_roi.x.append(x)
             current_roi.y.append(y)
         self.image_axes.figure.canvas.widgetlock.release(self.selector)
