@@ -37,9 +37,12 @@ def _stack_reader(stack_path, roi=None):
     if roi is not None:
         im = memmap(stack_path, dtype="uint16", shape=dims, mode="r")[roi]
     else:
-        im = fromfile(stack_path, dtype="uint16").reshape(dims)
-
-    return im
+        try:
+            im = fromfile(stack_path, dtype="uint16").reshape(dims)
+            return im
+        except:
+            print(stack_path)
+            raise
 
 
 def _stack_writer(stack_path, image):

@@ -94,7 +94,10 @@ def get_metadata(param_file):
 
     # convert dimensions from a string formatted 'X_sizexY_sizexZsize' to a numpy array
     if type(exp_dict["dimensions"]) is str:
-        exp_dict["dimensions"] = array(exp_dict["dimensions"].split("x")).astype("int")
+        if ';' in exp_dict["dimensions"]:
+            exp_dict["dimensions"] = array(exp_dict["dimensions"].split(";")[1].split("x")).astype("int")
+        else:
+            exp_dict["dimensions"] = array(exp_dict["dimensions"].split("x")).astype("int")
 
     # convert z step from string to float
     if type(exp_dict["z_step"]) is str:
